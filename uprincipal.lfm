@@ -1,0 +1,27 @@
+object frmPrincipal: TfrmPrincipal
+  Left = 643
+  Height = 240
+  Top = 289
+  Width = 320
+  Caption = 'Job'
+  ClientHeight = 240
+  ClientWidth = 320
+  LCLVersion = '4.2.0.0'
+  WindowState = wsMaximized
+  OnShow = FormShow
+  object memLog: TMemo
+    Left = 0
+    Height = 240
+    Top = 0
+    Width = 320
+    Align = alClient
+    TabOrder = 0
+  end
+  object Timer1: TTimer
+    Enabled = False
+    Interval = 10000
+    OnTimer = Timer1Timer
+    Left = 52
+    Top = 40
+  end
+end

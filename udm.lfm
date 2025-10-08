@@ -1,0 +1,29 @@
+object DM: TDM
+  OldCreateOrder = False
+  Height = 377
+  HorizontalOffset = 899
+  VerticalOffset = 268
+  Width = 720
+  object Conexao: TZConnection
+    ControlsCodePage = cCP_UTF8
+    Catalog = 'DB_POWER_SYS'
+    Properties.Strings = (
+      'RawStringEncoding=DB_CP'
+    )
+    DisableSavepoints = False
+    HostName = 'PAULO\SQLEXPRESS'
+    Port = 1433
+    Database = 'Provider=SQLOLEDB.1;Password=''root'';Persist Security Info=True;User ID=''sa'';Initial Catalog=''ERPHookedWeb_Servidor'';Data Source=''PAULO\SQLEXPRESS'';'
+    User = 'sa'
+    Password = 'root'
+    Protocol = 'ado'
+    Left = 57
+    Top = 37
+  end
+  object Query: TZQuery
+    Connection = Conexao
+    Params = <>
+    Left = 62
+    Top = 102
+  end
+end

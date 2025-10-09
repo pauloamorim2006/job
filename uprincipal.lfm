@@ -1,7 +1,7 @@
 object frmPrincipal: TfrmPrincipal
-  Left = 643
+  Left = 968
   Height = 240
-  Top = 289
+  Top = 390
   Width = 320
   Caption = 'Job'
   ClientHeight = 240
@@ -17,10 +17,9 @@ object frmPrincipal: TfrmPrincipal
     Align = alClient
     TabOrder = 0
   end
-  object Timer1: TTimer
+  object Timer: TTimer
     Enabled = False
-    Interval = 10000
-    OnTimer = Timer1Timer
+    OnTimer = TimerTimer
     Left = 52
     Top = 40
   end

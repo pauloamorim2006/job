@@ -1,11 +1,12 @@
 object DM: TDM
   OldCreateOrder = False
-  Height = 377
-  HorizontalOffset = 899
-  VerticalOffset = 268
+  Height = 517
+  HorizontalOffset = 1150
+  VerticalOffset = 332
   Width = 720
   object Conexao: TZConnection
     ControlsCodePage = cCP_UTF8
+    RawCharacterTransliterateOptions.SQL = True
     Catalog = 'DB_POWER_SYS'
     Properties.Strings = (
       'RawStringEncoding=DB_CP'
@@ -13,7 +14,7 @@ object DM: TDM
     DisableSavepoints = False
     HostName = 'PAULO\SQLEXPRESS'
     Port = 1433
-    Database = 'Provider=SQLOLEDB.1;Password=''root'';Persist Security Info=True;User ID=''sa'';Initial Catalog=''ERPHookedWeb_Servidor'';Data Source=''PAULO\SQLEXPRESS'';'
+    Database = 'Provider=SQLOLEDB.1;Password=''root'';Persist Security Info=True;User ID=''sa'';Initial Catalog=''ERPHookedWebSped'';Data Source=''PAULO\SQLEXPRESS'';'
     User = 'sa'
     Password = 'root'
     Protocol = 'ado'
@@ -25,5 +26,1210 @@ object DM: TDM
     Params = <>
     Left = 62
     Top = 102
+  end
+  object QryEmpresa: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'SELECT E.*, C.CodigoIbge, C.Descricao, C.Uf '
+      'FROM Empresas(NOLOCK) E'
+      'INNER JOIN Cidades(NOLOCK) C ON E.CidadeId = C.Id'
+      'WHERE E.Id = :Id AND'
+      'E.LicencaId = :LicencaId'
+    )
+    Params = <    
+      item
+        DataType = ftInteger
+        Name = 'Id'
+        SQLType = stInteger
+      end    
+      item
+        Name = 'LicencaId'
+      end>
+    Left = 128
+    Top = 104
+    ParamData = <    
+      item
+        DataType = ftInteger
+        Name = 'Id'
+        SQLType = stInteger
+      end    
+      item
+        Name = 'LicencaId'
+      end>
+  end
+  object QryContador: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'SELECT E.*, C.CodigoIbge, C.Descricao, C.Uf '
+      'FROM Contadores(NOLOCK) E'
+      'INNER JOIN Cidades(NOLOCK) C ON E.CidadeId = C.Id'
+      'WHERE E.Id = :Id'
+    )
+    Params = <    
+      item
+        DataType = ftInteger
+        Name = 'Id'
+        SQLType = stInteger
+      end>
+    Left = 200
+    Top = 104
+    ParamData = <    
+      item
+        DataType = ftInteger
+        Name = 'Id'
+        SQLType = stInteger
+      end>
+  end
+  object QryParticipante: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'SELECT DISTINCT P.*'
+      'FROM NotasFiscais(NOLOCK) N'
+      'INNER JOIN ViewPessoa(NOLOCK) P'
+      'ON N.PessoaId = P.Id'
+      'WHERE N.Situacao IN (1, 2, 3, 4) AND'
+      'CAST((CASE WHEN N.TipoNfe = 2 THEN COALESCE(N.DataHoraSaida, N.DataHoraEmissao) ELSE N.DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE'
+      'AND N.LicencaId = :LicencaId '
+      'AND N.EmpresaId = :EmpresaId'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+    Left = 288
+    Top = 104
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+  end
+  object QryProduto: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'SELECT P.*, U.Sigla, U.Descricao AS UnidadeDescricao'
+      'FROM ProdutosServicos P (NOLOCK)'
+      'INNER JOIN Unidades U (NOLOCK) ON P.UnidadeId = U.Id'
+      'WHERE P.Id = :Id'
+    )
+    Params = <    
+      item
+        Name = 'Id'
+      end>
+    Left = 376
+    Top = 102
+    ParamData = <    
+      item
+        Name = 'Id'
+      end>
+  end
+  object ACBrSPEDFiscal: TACBrSPEDFiscal
+    Path = '.\'
+    Delimitador = '|'
+    ReplaceDelimitador = False
+    TrimString = True
+    CurMascara = '#0.00'
+    Left = 256
+    Top = 40
+  end
+  object QryMovimentacao: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'SELECT 1 FROM NotasFiscais(NOLOCK)'
+      'WHERE Situacao IN (1, 2, 3, 4) AND'
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end>
+    Left = 496
+    Top = 102
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end>
+  end
+  object QryC100NFe: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select                                                               '
+      'N.Id,                                                              '
+      'N.Situacao,                                                          '
+      'N.Finalidade,                                                          '
+      'N.TipoNfe,                                                            '
+      'N.Modelo,                                                             '
+      'N.Numero,                                                             '
+      'N.Chave,                                                           '
+      'N.Serie,                                                           '
+      'CAST(N.DataHoraEmissao AS DATE) DataHoraEmissao,                                                            '
+      'N.PessoaId,'
+      'P.Codigo AS PessoaCodigo,'
+      'N.DataHoraSaida,                                                         '
+      'N.TipoFinanceiro,                                                          '
+      'N.TipoFrete,                                                 '
+      'N.ValorTotal,                                                      '
+      'N.ValorTotal,'
+      'N.ValorDesconto,'
+      'N.ValorBaseIcms,'
+      'N.ValorIcms,'
+      'N.ValorIpi,'
+      'N.ValorICMSST,'
+      'N.ValorFrete,'
+      'N.ValorSeguro,'
+      'N.ValorProduto,'
+      'N.ValorICMSDesonerado,'
+      'N.ValorOutro,'
+      'N.ValorBCST,'
+      'N.ValorPis,'
+      'N.ValorCofins                                             '
+      'from ViewNotaFiscal N                                                     '
+      'left join Pessoas P                                              '
+      'on N.PessoaId = P.Id'
+      'WHERE  Situacao IN (1, 2, 3, 4) AND'
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE and                     '
+      '(N.Modelo IN (''01'', ''1B'', ''04'', ''55'', ''65'')) AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+    Left = 75
+    Top = 178
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+  end
+  object QryC170: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'SELECT I.*, P.CodigoInterno AS ProdutoCodigo, U.Sigla, U.Descricao AS UnidadeDescricao'
+      'FROM NotasFiscaisItens I (NOLOCK)'
+      'INNER JOIN ProdutosServicos P (NOLOCK)'
+      'ON I.ProdutoId = P.Id'
+      'INNER JOIN Unidades U (NOLOCK)'
+      'ON P.UnidadeId = U.Id'
+      'WHERE I.NotaFiscalId = :Id'
+    )
+    Params = <    
+      item
+        Name = 'Id'
+      end>
+    Left = 152
+    Top = 176
+    ParamData = <    
+      item
+        Name = 'Id'
+      end>
+  end
+  object QryC190: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select                                                  '
+      'case                                                    '
+      '    when LEN(Cst) in (2, 3) then                         '
+      '        concat(Origem, Cst)             '
+      '    else                                                '
+      '        Cst                                  '
+      'end as Cst,                                             '
+      'Cfop,                                               '
+      'coalesce(AliquotaIcms, 0) as AliquotaIcms,                '
+      'sum(COALESCE(ValorTotal, 0)) as ValorTotal,                                            '
+      'sum(coalesce(ValorBaseIcms, 0)) as ValorBaseIcms,         '
+      'sum(coalesce(ValorIcms, 0)) as ValorIcms,     '
+      'sum(coalesce(ValorBCST, 0)) as ValorBCST,     '
+      'sum(coalesce(ValorICMSST, 0)) as ValorICMSST, '
+      'sum(                                                    '
+      'coalesce(ValorBaseIcms, 0) *                             '
+      '(coalesce(ValorReducaoIcms, 0) / 100)) as                '
+      'Reducao,                                                '
+      'sum(coalesce(ValorIpi, 0)) as ValorIpi          '
+      'from NotasFiscaisItens                                  '
+      'where NotaFiscalId = :Id                                '
+      'group by    '
+      'Origem,                                            '
+      'Cst,                                                    '
+      'Cfop,                                               '
+      'AliquotaIcms'
+    )
+    Params = <    
+      item
+        Name = 'Id'
+      end>
+    Left = 232
+    Top = 178
+    ParamData = <    
+      item
+        Name = 'Id'
+      end>
+  end
+  object QryC500: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select                                                               '
+      'N.Id,                                                              '
+      'N.Situacao,                                                          '
+      'N.Finalidade,                                                          '
+      'N.TipoNfe,                                                            '
+      'N.Modelo,                                                             '
+      'N.Numero,                                                             '
+      'N.Chave,                                                           '
+      'N.Serie,                                                           '
+      'N.DataHoraEmissao,                                                            '
+      'N.PessoaId,'
+      'P.Codigo AS PessoaCodigo,'
+      'N.DataHoraSaida,                                                         '
+      'N.TipoFinanceiro,                                                          '
+      'N.TipoFrete,                                                 '
+      'N.ValorTotal,                                                      '
+      'N.ValorTotal,'
+      'N.ValorDesconto,'
+      'N.ValorBaseIcms,'
+      'N.ValorIcms,'
+      'N.ValorIpi,'
+      'N.ValorICMSST,'
+      'N.ValorFrete,'
+      'N.ValorSeguro,'
+      'N.ValorProduto,'
+      'N.ValorICMSDesonerado,'
+      'N.ValorOutro,'
+      'N.ValorBCST,'
+      'N.ValorPis,'
+      'N.ValorCofins                                             '
+      'from ViewNotaFiscal N                                                     '
+      'left join Pessoas P                                              '
+      'on N.PessoaId = P.Id'
+      'WHERE  Situacao IN (1, 2, 3, 4) AND'
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE and                     '
+      '(N.Modelo IN (''06'', ''28'', ''29''))AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+    Left = 75
+    Top = 248
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+  end
+  object QryC590: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select                                                  '
+      'case                                                    '
+      '    when LEN(Cst) in (2, 3) then                         '
+      '        concat(Origem, Cst)             '
+      '    else                                                '
+      '        Cst                                  '
+      'end as Cst,                                             '
+      'Cfop,                                               '
+      'coalesce(AliquotaIcms, 0) as AliquotaIcms,                '
+      'sum(COALESCE(ValorTotal, 0)) as ValorTotal,                                            '
+      'sum(coalesce(ValorBaseIcms, 0)) as ValorBaseIcms,         '
+      'sum(coalesce(ValorIcms, 0)) as ValorIcms,     '
+      'sum(coalesce(ValorBCST, 0)) as ValorBCST,     '
+      'sum(coalesce(ValorICMSST, 0)) as ValorICMSST, '
+      'sum(                                                    '
+      'coalesce(ValorBaseIcms, 0) *                             '
+      '(coalesce(ValorReducaoIcms, 0) / 100)) as                '
+      'Reducao,                                                '
+      'sum(coalesce(ValorIpi, 0)) as ValorIpi          '
+      'from NotasFiscaisItens                                  '
+      'where NotaFiscalId = :Id                                '
+      'group by                                                '
+      'Cst,                                                    '
+      'Cfop,                                               '
+      'AliquotaIcms'
+    )
+    Params = <    
+      item
+        Name = 'Id'
+      end>
+    Left = 152
+    Top = 248
+    ParamData = <    
+      item
+        Name = 'Id'
+      end>
+  end
+  object QryC101: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'SELECT                                                          '
+      'SUM(DifalVFCPUFDest) AS DifalVFCPUFDest,    '
+      'SUM(DifalVICMSUFDest) AS DifalVICMSUFDest,  '
+      'SUM(DifalVICMSUFRemet) AS DifalVICMSUFRemet '
+      'FROM NotasFiscaisItens                                           '
+      'WHERE NotaFiscalId = :NotaFiscalId                                  '
+      'AND (COALESCE(DifalVFCPUFDest, 0) +                   '
+      'COALESCE(DifalVICMSUFDest, 0) +                       '
+      'COALESCE(DifalVICMSUFRemet, 0)) > 0  '
+    )
+    Params = <    
+      item
+        Name = 'NotaFiscalId'
+      end>
+    Left = 312
+    Top = 178
+    ParamData = <    
+      item
+        Name = 'NotaFiscalId'
+      end>
+  end
+  object QryD500: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select                                                               '
+      'N.Id,                                                              '
+      'N.Situacao,                                                          '
+      'N.Finalidade,                                                          '
+      'N.TipoNfe,                                                            '
+      'N.Modelo,                                                             '
+      'N.Numero,                                                             '
+      'N.Chave,                                                           '
+      'N.Serie,                                                           '
+      'N.DataHoraEmissao,                                                            '
+      'N.PessoaId,'
+      'P.Codigo AS PessoaCodigo,'
+      'N.DataHoraSaida,                                                         '
+      'N.TipoFinanceiro,                                                          '
+      'N.TipoFrete,                                                 '
+      'N.ValorTotal,                                                      '
+      'N.ValorTotal,'
+      'N.ValorDesconto,'
+      'N.ValorBaseIcms,'
+      'N.ValorIcms,'
+      'N.ValorIpi,'
+      'N.ValorICMSST,'
+      'N.ValorFrete,'
+      'N.ValorSeguro,'
+      'N.ValorProduto,'
+      'N.ValorICMSDesonerado,'
+      'N.ValorOutro,'
+      'N.ValorBCST,'
+      'N.ValorPis,'
+      'N.ValorCofins                                             '
+      'from ViewNotaFiscal N                                                     '
+      'left join Pessoas P                                              '
+      'on N.PessoaId = P.Id'
+      'WHERE  Situacao IN (1, 2, 3, 4) AND'
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE and                     '
+      '(N.Modelo IN (''21'', ''22'')) AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+    Left = 72
+    Top = 312
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+  end
+  object QryD590: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select                                                  '
+      'case                                                    '
+      '    when LEN(Cst) in (2, 3) then                         '
+      '        concat(Origem, Cst)             '
+      '    else                                                '
+      '        Cst                                  '
+      'end as Cst,                                             '
+      'Cfop,                                               '
+      'coalesce(AliquotaIcms, 0) as AliquotaIcms,                '
+      'sum(COALESCE(ValorTotal, 0)) as ValorTotal,                                            '
+      'sum(coalesce(ValorBaseIcms, 0)) as ValorBaseIcms,         '
+      'sum(coalesce(ValorIcms, 0)) as ValorIcms,     '
+      'sum(coalesce(ValorBCST, 0)) as ValorBCST,     '
+      'sum(coalesce(ValorICMSST, 0)) as ValorICMSST, '
+      'sum(                                                    '
+      'coalesce(ValorBaseIcms, 0) *                             '
+      '(coalesce(ValorReducaoIcms, 0) / 100)) as                '
+      'Reducao,                                                '
+      'sum(coalesce(ValorIpi, 0)) as ValorIpi          '
+      'from NotasFiscaisItens                                  '
+      'where NotaFiscalId = :Id                                '
+      'group by                                                '
+      'Cst,                                                    '
+      'Cfop,                                               '
+      'AliquotaIcms'
+    )
+    Params = <    
+      item
+        Name = 'Id'
+      end>
+    Left = 157
+    Top = 312
+    ParamData = <    
+      item
+        Name = 'Id'
+      end>
+  end
+  object QryTotalDebito: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select coalesce(sum(coalesce(Valor, 0)), 0)'
+      '            as Valor'
+      '            from'
+      '            (select'
+      '            coalesce(sum(coalesce(N.ValorIcms, 0)), 0) AS Valor'
+      '            from ViewNotaFiscal N'
+      '            left join Pessoas P'
+      '            on N.PessoaId = P.Id'
+      '            WHERE  Situacao IN (1) AND'
+      '            CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE AND'
+      '            (N.Modelo IN (''01'', ''1B'', ''04'', ''55'', ''65'')) AND'
+      '            N.LicencaId = :LicencaId AND'
+      '            N.EmpresaId = :EmpresaId AND'
+      '            N.TipoNfe = 1'
+      '            UNION ALL'
+      '            select'
+      '            coalesce(sum(coalesce(N.ValorIcms, 0)), 0) AS Valor'
+      '            from ViewNotaFiscal N'
+      '            left join Pessoas P'
+      '            on N.PessoaId = P.Id'
+      '            WHERE  Situacao IN (1) AND'
+      '            CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE and'
+      '            (N.Modelo IN (''06'', ''28'', ''29''))AND'
+      '            N.LicencaId = :LicencaId AND'
+      '            N.EmpresaId = :EmpresaId AND'
+      '            N.TipoNfe = 1'
+      '            UNION ALL'
+      '            select'
+      '            coalesce(sum(coalesce(N.ValorIcms, 0)), 0) AS Valor'
+      '            from ViewNotaFiscal N'
+      '            left join Pessoas P'
+      '            on N.PessoaId = P.Id'
+      '            WHERE  Situacao IN (1) AND'
+      '            CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE and'
+      '            (N.Modelo IN (''21'', ''22'')) AND'
+      '            N.LicencaId = :LicencaId AND'
+      '            N.EmpresaId = :EmpresaId AND'
+      '            N.TipoNfe = 1) Registro'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+    Left = 75
+    Top = 383
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+  end
+  object QryTotalCredito: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select coalesce(sum(coalesce(Valor, 0)), 0)'
+      '            as Valor'
+      '            from'
+      '            (select'
+      '            coalesce(sum(coalesce(N.ValorIcms, 0)), 0) AS Valor'
+      '            from ViewNotaFiscal N'
+      '            left join Pessoas P'
+      '            on N.PessoaId = P.Id'
+      '            WHERE  Situacao IN (1) AND'
+      '            CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE AND'
+      '            (N.Modelo IN (''01'', ''1B'', ''04'', ''55'', ''65'')) AND'
+      '            N.LicencaId = :LicencaId AND'
+      '            N.EmpresaId = :EmpresaId AND'
+      '            N.TipoNfe in (0, 2)'
+      '            UNION ALL'
+      '            select'
+      '            coalesce(sum(coalesce(N.ValorIcms, 0)), 0) AS Valor'
+      '            from ViewNotaFiscal N'
+      '            left join Pessoas P'
+      '            on N.PessoaId = P.Id'
+      '            WHERE  Situacao IN (1) AND'
+      '            CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE and'
+      '            (N.Modelo IN (''06'', ''28'', ''29''))AND'
+      '            N.LicencaId = :LicencaId AND'
+      '            N.EmpresaId = :EmpresaId AND'
+      '            N.TipoNfe  in (0, 2)'
+      '            UNION ALL'
+      '            select'
+      '            coalesce(sum(coalesce(N.ValorIcms, 0)), 0) AS Valor'
+      '            from ViewNotaFiscal N'
+      '            left join Pessoas P'
+      '            on N.PessoaId = P.Id'
+      '            WHERE  Situacao IN (1) AND'
+      '            CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE and'
+      '            (N.Modelo IN (''21'', ''22'')) AND'
+      '            N.LicencaId = :LicencaId AND'
+      '            N.EmpresaId = :EmpresaId AND'
+      '            N.TipoNfe  in (0, 2)) Registro'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+    Left = 168
+    Top = 383
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+  end
+  object QryE200: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select DISTINCT LUf AS ESTADO'
+      'from'
+      '(select P.LUf'
+      'from ViewNotaFiscal N'
+      'left join ViewPessoa P'
+      'on N.PessoaId = P.Id'
+      'WHERE  Situacao IN (1) AND'
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE AND'
+      '(N.Modelo IN (''01'', ''1B'', ''04'', ''55'', ''65'')) AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId AND'
+      'COALESCE(N.ValorICMSST, 0) > 0'
+      'UNION ALL'
+      'select P.LUf'
+      'from ViewNotaFiscal N'
+      'left join ViewPessoa P'
+      'on N.PessoaId = P.Id'
+      'WHERE  Situacao IN (1) AND'
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE and'
+      '(N.Modelo IN (''06'', ''28'', ''29''))AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId AND'
+      'COALESCE(N.ValorICMSST, 0) > 0) Registro'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+    Left = 266
+    Top = 384
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+  end
+  object QryE210DevolvST: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select SUM(COALESCE(V.ValorICMSST, 0)) AS ValorICMSST'
+      'from ViewNotaFiscal N'
+      'left join ViewPessoa P ON N.PessoaId = P.Id'
+      'left join NotasFiscaisItens I ON I.NotaFiscalId = N.Id '
+      'WHERE  Situacao IN (1) AND'
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE AND'
+      '(N.Modelo IN (''01'', ''1B'', ''04'', ''55'', ''65'')) AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId AND'
+      'N.TipoNfe IN (0, 2) AND'
+      'COALESCE(V.ValorICMSST, 0) > 0 AND'
+      'I.Cfop IN (1410, 1411, 1414, 1415, 1660, 1661,1662, 2410, 2411, 2414, 2415, 2660,2661, 2662) AND'
+      'P.LUf = :ESTADO'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end    
+      item
+        Name = 'ESTADO'
+      end>
+    Left = 352
+    Top = 383
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end    
+      item
+        Name = 'ESTADO'
+      end>
+  end
+  object QryE210RessarcST: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select SUM(COALESCE(V.ValorICMSST, 0)) AS ValorICMSST'
+      'from ViewNotaFiscal N'
+      'left join ViewPessoa P ON N.PessoaId = P.Id'
+      'left join NotasFiscaisItens I ON I.NotaFiscalId = N.Id '
+      'WHERE  Situacao IN (1) AND'
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE AND'
+      '(N.Modelo IN (''01'', ''1B'', ''04'', ''55'', ''65'')) AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId AND'
+      'N.TipoNfe IN (0, 2) AND'
+      'COALESCE(V.ValorICMSST, 0) > 0 AND'
+      'I.Cfop IN (1603, 2603) AND'
+      'P.LUf = :ESTADO'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end    
+      item
+        Name = 'ESTADO'
+      end>
+    Left = 456
+    Top = 384
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end    
+      item
+        Name = 'ESTADO'
+      end>
+  end
+  object QryE210CredST: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select SUM(COALESCE(V.ValorICMSST, 0)) AS ValorICMSST'
+      'from ViewNotaFiscal N'
+      'left join ViewPessoa P ON N.PessoaId = P.Id'
+      'left join NotasFiscaisItens I ON I.NotaFiscalId = N.Id '
+      'WHERE  Situacao IN (1) AND'
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE AND'
+      '(N.Modelo IN (''01'', ''1B'', ''04'', ''55'', ''65'')) AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId AND'
+      'N.TipoNfe IN (0, 2) AND'
+      'COALESCE(V.ValorICMSST, 0) > 0 AND'
+      'I.Cfop IN (1410, 1411, 1414, 1415, 1660, 1661, 1662, 2410,'
+      '2411, 2414, 2415, 2660, 2661, 2662) AND'
+      'P.LUf = :ESTADO'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end    
+      item
+        Name = 'ESTADO'
+      end>
+    Left = 560
+    Top = 383
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end    
+      item
+        Name = 'ESTADO'
+      end>
+  end
+  object QryE210RetencaoST: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select SUM(COALESCE(ValorICMSST, 0)) AS ValorICMSST'
+      'from'
+      '(select SUM(COALESCE(N.ValorICMSST, 0)) AS ValorICMSST'
+      'from ViewNotaFiscal N'
+      'left join ViewPessoa P'
+      'on N.PessoaId = P.Id'
+      'WHERE  Situacao IN (1) AND'
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE AND'
+      '(N.Modelo IN (''01'', ''1B'', ''04'', ''55'', ''65'')) AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId AND'
+      'N.TipoNfe IN (1) AND'
+      'COALESCE(N.ValorICMSST, 0) > 0 AND'
+      'P.LUf = :UF AND'
+      'I.Cfop BETWEEN 5000 AND 6999'
+      'UNION ALL'
+      'select SUM(COALESCE(N.ValorICMSST, 0)) AS ValorICMSST'
+      'from ViewNotaFiscal N'
+      'left join ViewPessoa P'
+      'on N.PessoaId = P.Id'
+      'WHERE  Situacao IN (1) AND'
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE and'
+      '(N.Modelo IN (''06'', ''28'', ''29''))AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId AND'
+      'N.TipoNfe IN (1) AND'
+      'COALESCE(N.ValorICMSST, 0) > 0 AND'
+      'P.LUf = :UF AND'
+      'I.Cfop BETWEEN 5000 AND 6999) Registro'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end    
+      item
+        Name = 'UF'
+      end>
+    Left = 75
+    Top = 448
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end    
+      item
+        Name = 'UF'
+      end>
+  end
+  object QryE510: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select '
+      'I.Cfop,'
+      'I.IpiCst,'
+      'SUM(COALESCE(I.ValorIpi, 0)) AS ValorIpi,'
+      'SUM(COALESCE(I.ValorBaseIpi, 0)) AS ValorBaseIpi'
+      'from ViewNotaFiscal N'
+      'left join ViewPessoa P ON N.PessoaId = P.Id'
+      'left join NotasFiscaisItens I ON I.NotaFiscalId = N.Id '
+      'WHERE  Situacao IN (1) AND'
+      'Finalidade NOT IN (2) AND '
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE AND'
+      '(N.Modelo IN (''01'', ''1B'', ''04'', ''55'', ''65'')) AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId AND'
+      'N.TipoNfe IN (2) AND'
+      'I.IpiCst IN ('
+      '''00'','
+      '''01'','
+      '''02'','
+      '''03'','
+      '''04'','
+      '''05'','
+      '''49'','
+      '''50'','
+      '''51'','
+      '''52'','
+      '''53'','
+      '''54'','
+      '''55'','
+      '''99'')'
+      'GROUP BY'
+      'I.Cfop,'
+      'I.IpiCst'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+    Left = 184
+    Top = 448
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+  end
+  object QryE520Deb: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select '
+      'SUM(COALESCE(I.ValorIpi, 0)) AS Valor'
+      'from ViewNotaFiscal N'
+      'left join ViewPessoa P ON N.PessoaId = P.Id'
+      'left join NotasFiscaisItens I ON I.NotaFiscalId = N.Id '
+      'WHERE  Situacao IN (1) AND'
+      'Finalidade NOT IN (2) AND '
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE AND'
+      '(N.Modelo IN (''01'', ''1B'', ''04'', ''55'', ''65'')) AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId AND'
+      'N.TipoNfe IN (0, 1) AND'
+      'I.Cfop BETWEEN 5000 AND 6999 AND'
+      'I.IpiCst IN ('
+      '''00'','
+      '''01'','
+      '''02'','
+      '''03'','
+      '''04'','
+      '''05'','
+      '''49'','
+      '''50'','
+      '''51'','
+      '''52'','
+      '''53'','
+      '''54'','
+      '''55'','
+      '''99'')'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+    Left = 264
+    Top = 448
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+  end
+  object QryE520Cred: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select '
+      'SUM(COALESCE(I.ValorIpi, 0)) AS Valor'
+      'from ViewNotaFiscal N'
+      'left join ViewPessoa P ON N.PessoaId = P.Id'
+      'left join NotasFiscaisItens I ON I.NotaFiscalId = N.Id '
+      'WHERE  Situacao IN (1) AND'
+      'Finalidade NOT IN (2) AND '
+      'CAST((CASE WHEN TipoNfe = 2 THEN COALESCE(DataHoraSaida, DataHoraEmissao) ELSE DataHoraEmissao END) AS DATE) BETWEEN :DE AND :ATE AND'
+      '(N.Modelo IN (''01'', ''1B'', ''04'', ''55'', ''65'')) AND'
+      'N.LicencaId = :LicencaId AND'
+      'N.EmpresaId = :EmpresaId AND'
+      'I.Cfop BETWEEN 1000 AND 3999 AND'
+      'I.IpiCst IN ('
+      '''00'','
+      '''01'','
+      '''02'','
+      '''03'','
+      '''04'','
+      '''05'','
+      '''49'','
+      '''50'','
+      '''51'','
+      '''52'','
+      '''53'','
+      '''54'','
+      '''55'','
+      '''99'')'
+    )
+    Params = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+    Left = 352
+    Top = 448
+    ParamData = <    
+      item
+        Name = 'DE'
+      end    
+      item
+        Name = 'ATE'
+      end    
+      item
+        Name = 'LicencaId'
+      end    
+      item
+        Name = 'EmpresaId'
+      end>
+  end
+  object QryEstoque: TZQuery
+    Connection = Conexao
+    SQL.Strings = (
+      'select                                                           '
+      'P.Id,                                                          '
+      'P.Codigo,'
+      'P.CodigoInterno,                                              '
+      'U.Sigla,                                          '
+      'P.Gtin,           '
+      'P.TipoItem,                                             '
+      'P.Nome,                                                        '
+      'coalesce(                                                        '
+      '(select                                                          '
+      'coalesce((sum(COALESCE(EntradaFisico, 0))-sum(COALESCE(SaidaFisico, 0))),0)              '
+      'from Estoques E (NOLOCK)                                             '
+      'where P.Id = E.ProdutoId AND  '
+      'E.Data <= :Data AND'
+      'E.EmpresaId = :EmpresaId AND'
+      'E.LicencaId = :LicencaId),0)                                                '
+      'as QuantidadeEstoque,                                              '
+      'PrecoCusto                        '
+      'from ProdutosServicos P (NOLOCK)                                             '
+      'inner join Unidades U (NOLOCK) ON P.UnidadeId = U.Id'
+      'WHERE COALESCE(P.TipoItem, ''01'') <> ''07'' AND '
+      'P.LicencaId = :LicencaId AND'
+      'coalesce(                                                        '
+      '(select                                                          '
+      'coalesce((sum(COALESCE(EntradaFisico, 0))-sum(COALESCE(SaidaFisico, 0))),0)             '
+      'from Estoques E (NOLOCK)                                             '
+      'where P.Id = E.ProdutoId AND  '
+      'E.Data <= :Data AND'
+      'E.EmpresaId = :EmpresaId AND'
+      'E.LicencaId = :LicencaId),0) > 0'
+    )
+    Params = <    
+      item
+        Name = 'Data'
+      end    
+      item
+        Name = 'EmpresaId'
+      end    
+      item
+        Name = 'LicencaId'
+      end>
+    Left = 443
+    Top = 451
+    ParamData = <    
+      item
+        Name = 'Data'
+      end    
+      item
+        Name = 'EmpresaId'
+      end    
+      item
+        Name = 'LicencaId'
+      end>
+  end
+  object Transaction: TZTransaction
+    Connection = Conexao
+    AutoCommit = True
+    Left = 136
+    Top = 40
+  end
+  object QryExec: TZQuery
+    Connection = Conexao
+    Params = <>
+    Left = 244
+    Top = 254
   end
 end

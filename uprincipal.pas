@@ -14,9 +14,9 @@ type
 
   TfrmPrincipal = class(TForm)
     memLog: TMemo;
-    Timer1: TTimer;
+    Timer: TTimer;
     procedure FormShow(Sender: TObject);
-    procedure Timer1Timer(Sender: TObject);
+    procedure TimerTimer(Sender: TObject);
   private
     procedure AddMessage(Value: String);
   public
@@ -32,13 +32,16 @@ implementation
 
 { TfrmPrincipal }
 
-procedure TfrmPrincipal.Timer1Timer(Sender: TObject);
+procedure TfrmPrincipal.TimerTimer(Sender: TObject);
 begin
-  Timer1.Enabled := False;
+  Timer.Enabled := False;
+  memLog.Clear;
   AddMessage('Início');
   try
     try
       DM.Conectar(ExtractFilePath(Application.ExeName) + 'Job.ini');
+
+      DM.Gerar;
 
       DM.Desconectar;
     except
@@ -49,13 +52,15 @@ begin
     end;
   finally
     AddMessage('Fim');
-    Timer1.Enabled := True;
+    Timer.Enabled := True;
   end;
 end;
 
 procedure TfrmPrincipal.FormShow(Sender: TObject);
 begin
-  Timer1.Enabled := True;
+  Timer.Interval := StrToIntDef(DM.LerConfiguracao(ExtractFilePath(Application.ExeName) + 'Job.ini', 'Timer'), 60) * 1000;
+
+  Timer.Enabled := True;
 end;
 
 procedure TfrmPrincipal.AddMessage(Value: String);

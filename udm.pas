@@ -6,8 +6,8 @@ interface
 
 uses
   Classes, SysUtils, ACBrSpedFiscal, ZConnection, ZDataset, ZAbstractRODataset,
-  IniFiles, ACBrEFDBlocos, ACBrUtil.Strings, StrUtils, DateUtils, Forms, Math,
-  Dialogs;
+  IniFiles, ACBrEFDBlocos, ACBrUtil.Strings, MSSQLConn, StrUtils, DateUtils,
+  Forms, Math, Dialogs;
 
 type
 
@@ -16,6 +16,7 @@ type
   TDM = class(TDataModule)
     ACBrSPEDFiscal: TACBrSPEDFiscal;
     Conexao: TZConnection;
+    MSSQLConnection1: TMSSQLConnection;
     QryC170: TZQuery;
     QryC190: TZQuery;
     QryC500: TZQuery;
@@ -29,7 +30,7 @@ type
     QryE520Deb: TZQuery;
     QryE520Cred: TZQuery;
     QryTotalCredito: TZQuery;
-    Query: TZQuery;
+    Query1: TZQuery;
     QryEmpresa: TZQuery;
     QryContador: TZQuery;
     QryParticipante: TZQuery;
@@ -43,6 +44,7 @@ type
     QryEstoque: TZQuery;
     Transaction: TZTransaction;
     QryExec: TZQuery;
+    ZConnection1: TZConnection;
   private
     FDataInicial: TDateTime;
     FDataFinal: TDateTime;
@@ -51,6 +53,9 @@ type
     FLocal: String;
     FErro: Boolean;
     FMensagem: String;
+    Query: TZQuery;
+
+    FUltimoCodigo: String;
 
     function AnoToVersao: TACBrCodVer;
     function PossuiMovimentacao: Boolean;
@@ -79,8 +84,6 @@ type
     procedure Conectar(Path: String);
     procedure Desconectar;
     procedure Gerar;
-
-    function LerConfiguracao(Path: String; Campo: String): String;
   end;
 
 var
@@ -168,11 +171,11 @@ begin
 
     if QryProduto.fieldByName('Sigla').AsString <> EmptyStr then
     begin
-      if not ACBrSpedFiscal.Bloco_0.Registro0001.Registro0190.LocalizaRegistro(trim(QryProduto.fieldByName('Sigla').AsString)) then
+      if not ACBrSpedFiscal.Bloco_0.Registro0001.Registro0190.LocalizaRegistro(UpperCase(trim(QryProduto.fieldByName('Sigla').AsString))) then
       begin
         with ACBrSpedFiscal.Bloco_0.Registro0001.Registro0190.New do
         begin
-          UNID  := QryProduto.fieldByName('Sigla').AsString;
+          UNID  := UpperCase(QryProduto.fieldByName('Sigla').AsString);
           DESCR := QryProduto.fieldByName('UnidadeDescricao').AsString;
         end;
       end;
@@ -245,6 +248,7 @@ procedure TDM.GerarBloco0;
 var
   AAno, AMes: Integer;
 begin
+  FUltimoCodigo := '0';
   AAno := Query.FieldByName('Ano').AsInteger;
   AMes := Query.FieldByName('Mes').AsInteger;
   FPerfil := Query.FieldByName('Perfil').AsString;
@@ -362,46 +366,42 @@ begin
       QryParticipante.ParamByName('EmpresaId').AsInteger := Query.FieldByName('EmpresaId').AsInteger;
       QryParticipante.Open;
 
-      try
-        QryParticipante.First;
+      QryParticipante.First;
 
-        while not QryParticipante.Eof do
+      while not QryParticipante.Eof do
+      begin
+        if not Registro0150.LocalizaRegistro(QryParticipante.FieldByName('Id').AsString) then
         begin
-          if not Registro0150.LocalizaRegistro(QryParticipante.FieldByName('Id').AsString) then
+          with Registro0150New do
           begin
-            with Registro0150New do
+            if QryParticipante.FieldByName('LCodigoIbge').AsString = EmptyStr then
+              raise Exception.Create('Cliente sem código da cidade: ' + QryParticipante.FieldByName('Id').AsString);
+            COD_PART := QryParticipante.FieldByName('Codigo').AsString;
+            NOME := RemoverQuebrasDeLinha(QryParticipante.FieldByName('Nome').AsString);
+            if Length(OnlyNumber(Trim(QryParticipante.FieldByName('CnpjCpfDi').AsString))) > 11 then
+              CNPJ := OnlyNumber(Trim(QryParticipante.FieldByName('CnpjCpfDi').AsString))
+            else
+              CPF := OnlyNumber(Trim(QryParticipante.FieldByName('CnpjCpfDi').AsString));
+            COD_MUN := 9999999;
+            IF (not QryParticipante.FieldByName('LPaisId').IsNull) AND
+               (QryParticipante.FieldByName('LUf').AsString = 'EX') THEN
             begin
-              if QryParticipante.FieldByName('LCodigoIbge').AsString = EmptyStr then
-                raise Exception.Create('Cliente sem código da cidade: ' + QryParticipante.FieldByName('Id').AsString);
-              COD_PART := QryParticipante.FieldByName('Codigo').AsString;
-              NOME := QryParticipante.FieldByName('Nome').AsString;
-              if Length(OnlyNumber(Trim(QryParticipante.FieldByName('CnpjCpfDi').AsString))) > 11 then
-                CNPJ := OnlyNumber(Trim(QryParticipante.FieldByName('CnpjCpfDi').AsString))
-              else
-                CPF := OnlyNumber(Trim(QryParticipante.FieldByName('CnpjCpfDi').AsString));
-              COD_MUN := 9999999;
-              IF (not QryParticipante.FieldByName('LPaisId').IsNull) AND
-                 (QryParticipante.FieldByName('LUf').AsString = 'EX') THEN
-              begin
-                COD_PAIS := QryParticipante.FieldByName('LPaisId').AsString;
-              end
-              else
-              begin
-                COD_MUN := QryParticipante.FieldByName('LCodigoIbge').AsInteger;
-                COD_PAIS := '1058';
-              end;
-              IE := OnlyNumber(Trim(QryParticipante.FieldByName('InscricaoEstadual').AsString));
-              SUFRAMA := EmptyStr;
-              ENDERECO := QryParticipante.FieldByName('LEndereco').AsString;
-              NUM := QryParticipante.FieldByName('LNumero').AsString;
-              COMPL := QryParticipante.FieldByName('LComplemento').AsString;
-              BAIRRO := QryParticipante.FieldByName('LBairro').AsString;
+              COD_PAIS := QryParticipante.FieldByName('LPaisId').AsString;
+            end
+            else
+            begin
+              COD_MUN := QryParticipante.FieldByName('LCodigoIbge').AsInteger;
+              COD_PAIS := '1058';
             end;
+            IE := OnlyNumber(Trim(QryParticipante.FieldByName('InscricaoEstadual').AsString));
+            SUFRAMA := EmptyStr;
+            ENDERECO := RemoverQuebrasDeLinha(QryParticipante.FieldByName('LEndereco').AsString);
+            NUM := RemoverQuebrasDeLinha(QryParticipante.FieldByName('LNumero').AsString);
+            COMPL := RemoverQuebrasDeLinha(QryParticipante.FieldByName('LComplemento').AsString);
+            BAIRRO := RemoverQuebrasDeLinha(QryParticipante.FieldByName('LBairro').AsString);
           end;
-          QryParticipante.Next;
         end;
-      finally
-        FreeAndNil(QryParticipante);
+        QryParticipante.Next;
       end;
 
 
@@ -415,7 +415,7 @@ procedure TDM.GerarBlocoC;
 var
   NumeroItem: Integer;
 begin
-
+  FUltimoCodigo := 'C';
   with ACBrSPEDFiscal.Bloco_C do
   begin
     with RegistroC001New do
@@ -873,6 +873,7 @@ end;
 
 procedure TDM.GerarBlocoD;
 begin
+  FUltimoCodigo := 'D';
   QryD500.Close;
   QryD500.ParamByName('DE').AsDate := FDataInicial;
   QryD500.ParamByName('ATE').AsDate := FDataFinal;
@@ -985,6 +986,7 @@ procedure TDM.GerarBlocoE;
 var
   Resultado: Double;
 begin
+  FUltimoCodigo := 'E';
   with ACBrSPEDFiscal.Bloco_E do
   begin
     with RegistroE001New do
@@ -1251,6 +1253,7 @@ end;
 
 procedure TDM.GerarBlocoG;
 begin
+  FUltimoCodigo := 'G';
   with ACBrSPEDFiscal.Bloco_G do
   begin
     with RegistroG001New do
@@ -1262,6 +1265,7 @@ end;
 
 procedure TDM.GerarBlocoH;
 begin
+  FUltimoCodigo := 'C';
   with ACBrSPEDFiscal.Bloco_H do
   begin
 
@@ -1336,6 +1340,7 @@ end;
 
 procedure TDM.GerarBlocoK;
 begin
+  FUltimoCodigo := 'K';
   with ACBrSPEDFiscal.Bloco_K do
   begin
     with RegistroK001New do
@@ -1359,27 +1364,23 @@ begin
 
           while not QryEstoque.Eof do
           begin
-            try
-              if (QryEstoque.FieldByName('TipoItem').AsString = '00') or
-                (QryEstoque.FieldByName('TipoItem').AsString = '01') or
-                (QryEstoque.FieldByName('TipoItem').AsString = '03') or
-                (QryEstoque.FieldByName('TipoItem').AsString = '04') or
-                (QryProduto.FieldByName('TipoItem').AsString = '05') or
-                (QryEstoque.FieldByName('TipoItem').AsString = '06') then
-              begin
-                AdicionarProdutoAo0200(QryEstoque.FieldByName('Id').AsInteger);
+            if (QryEstoque.FieldByName('TipoItem').AsString = '00') or
+              (QryEstoque.FieldByName('TipoItem').AsString = '01') or
+              (QryEstoque.FieldByName('TipoItem').AsString = '03') or
+              (QryEstoque.FieldByName('TipoItem').AsString = '04') or
+              (QryProduto.FieldByName('TipoItem').AsString = '05') or
+              (QryEstoque.FieldByName('TipoItem').AsString = '06') then
+            begin
+              AdicionarProdutoAo0200(QryEstoque.FieldByName('Id').AsInteger);
 
-                with RegistroK200New do
-                begin
-                  COD_ITEM := QryEstoque.FieldByName('CodigoInterno').AsString;
-                  QTD := QryEstoque.FieldByName('QuantidadeEstoque').AsFloat;
-                  IND_EST := estPropInformantePoder;
-                  COD_PART := '';
-                  DT_EST := ACBrSPEDFiscal.DT_FIN;
-                end;
+              with RegistroK200New do
+              begin
+                COD_ITEM := QryEstoque.FieldByName('CodigoInterno').AsString;
+                QTD := QryEstoque.FieldByName('QuantidadeEstoque').AsFloat;
+                IND_EST := estPropInformantePoder;
+                COD_PART := '';
+                DT_EST := ACBrSPEDFiscal.DT_FIN;
               end;
-            finally
-              FreeAndNil(QryProduto);
             end;
 
             QryEstoque.Next;
@@ -1393,6 +1394,7 @@ end;
 
 procedure TDM.GerarBloco1;
 begin
+  FUltimoCodigo := 'C';
   with ACBrSPEDFiscal.Bloco_1 do
   begin
     with Registro1001New do
@@ -1425,6 +1427,7 @@ var
   Codigo: TGUID;
   sCodigo: String;
 begin
+  FUltimoCodigo := 'ArquivoI';
   ACBrSPEDFiscal.LinhasBuffer := 1000;
 
   CreateGUID(Codigo);
@@ -1443,7 +1446,7 @@ begin
   FLocal := ACBrSPEDFiscal.Path + ACBrSPEDFiscal.Arquivo;
 
   ACBrSPEDFiscal.SaveFileTXT;
-
+  FUltimoCodigo := 'ArquivoF';
 
 end;
 
@@ -1451,6 +1454,7 @@ procedure TDM.Atualizar;
 var
   Lista: TStrings;
 begin
+  FUltimoCodigo := 'Atualizar';
   try
     if not Conexao.InTransaction then
       Conexao.StartTransaction;
@@ -1491,12 +1495,16 @@ begin
       raise Exception.Create('Erro: ' + Erro.Message);
     end;
   end;
+  FUltimoCodigo := 'AtualizarF';
 end;
 
 procedure TDM.Conectar(Path: String);
 var
   Ini: TIniFile;
 begin
+  if Conexao.Connected then
+     Exit;
+
   Ini := TIniFile.Create(Path);
   try
     FCaminhoSpedFiscal := Ini.ReadString('Path', 'CaminhoSpedFiscal', '');
@@ -1524,7 +1532,7 @@ procedure TDM.Gerar;
 begin
   try
     Query.Close;
-    Query.SQL.Text := 'SELECT * FROM SpedsFiscais(NOLOCK) WHERE Situacao = 4';
+    Query.SQL.Text := 'SELECT * FROM SpedsFiscais(NOLOCK) WHERE Situacao = 1';
     Query.Open;
 
     while not Query.Eof do
@@ -1549,7 +1557,7 @@ begin
         on Erro: Exception do
         begin
           FErro := True;
-          FMensagem := 'Erro: ' + Erro.Message;
+          FMensagem := 'Erro: ' + Erro.Message + ' -> ' + FUltimoCodigo;
           Atualizar;
         end;
       end;
@@ -1560,18 +1568,6 @@ begin
     FecharTodasAsTZQuery;
   finally
     Query.Close;
-  end;
-end;
-
-function TDM.LerConfiguracao(Path: String; Campo: String): String;
-var
-  Ini: TIniFile;
-begin
-  Ini := TIniFile.Create(Path);
-  try
-    FCaminhoSpedFiscal := Ini.ReadString('Configuracao', Campo, '');
-  finally
-    Ini.Free;
   end;
 end;
 

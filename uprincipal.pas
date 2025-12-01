@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-  uDM;
+  uDM, IniFiles;
 
 type
 
@@ -19,6 +19,7 @@ type
     procedure TimerTimer(Sender: TObject);
   private
     procedure AddMessage(Value: String);
+    function LerConfiguracao(Path: String; Campo: String): String;
   public
 
   end;
@@ -43,7 +44,7 @@ begin
 
       DM.Gerar;
 
-      DM.Desconectar;
+      // DM.Desconectar;
     except
       on Erro: Exception do
       begin
@@ -57,15 +58,30 @@ begin
 end;
 
 procedure TfrmPrincipal.FormShow(Sender: TObject);
+var
+  Path: String;
 begin
-  Timer.Interval := StrToIntDef(DM.LerConfiguracao(ExtractFilePath(Application.ExeName) + 'Job.ini', 'Timer'), 60) * 1000;
+  Path := ExtractFilePath(Application.ExeName) + 'Job.ini';
+  Timer.Interval := StrToIntDef(LerConfiguracao(Path, 'Timer'), 60) * 1000;
 
   Timer.Enabled := True;
 end;
 
 procedure TfrmPrincipal.AddMessage(Value: String);
 begin
-  memLog.Append(FormatDateTime('yyyy-mm-dd hh:nn:ss', Date) + ' - ' + Value);
+  memLog.Append(FormatDateTime('yyyy-mm-dd hh:nn:ss', Now) + ' - ' + Value);
+end;
+
+function TfrmPrincipal.LerConfiguracao(Path: String; Campo: String): String;
+var
+  Ini: TIniFile;
+begin
+  Ini := TIniFile.Create(Path);
+  try
+    Result := Ini.ReadString('Configuracao', Campo, '');
+  finally
+    Ini.Free;
+  end;
 end;
 
 end.

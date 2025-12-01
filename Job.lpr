@@ -22,7 +22,7 @@ begin
   {$POP}
   Application.Initialize;
   Application.CreateForm(TfrmPrincipal, frmPrincipal);
-  Application.CreateForm(TDM, DM);
+  // Application.CreateForm(TDM, DM);
   Application.Run;
 end.
 

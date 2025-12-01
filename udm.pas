@@ -16,7 +16,6 @@ type
   TDM = class(TDataModule)
     ACBrSPEDFiscal: TACBrSPEDFiscal;
     Conexao: TZConnection;
-    MSSQLConnection1: TMSSQLConnection;
     QryC170: TZQuery;
     QryC190: TZQuery;
     QryC500: TZQuery;
@@ -30,7 +29,7 @@ type
     QryE520Deb: TZQuery;
     QryE520Cred: TZQuery;
     QryTotalCredito: TZQuery;
-    Query1: TZQuery;
+    Query: TZQuery;
     QryEmpresa: TZQuery;
     QryContador: TZQuery;
     QryParticipante: TZQuery;
@@ -44,7 +43,6 @@ type
     QryEstoque: TZQuery;
     Transaction: TZTransaction;
     QryExec: TZQuery;
-    ZConnection1: TZConnection;
   private
     FDataInicial: TDateTime;
     FDataFinal: TDateTime;
@@ -53,7 +51,6 @@ type
     FLocal: String;
     FErro: Boolean;
     FMensagem: String;
-    Query: TZQuery;
 
     FUltimoCodigo: String;
 
@@ -69,6 +66,7 @@ type
     function RemoverQuebrasDeLinha(const Texto: string; Substituto: string = ''): string;
     function StrToDataISO(const S: string): TDateTime;
     procedure FecharTodasAsTZQuery;
+    procedure GravarLog(const AMensagem: string);
 
     procedure GerarBloco0;
     procedure GerarBlocoC;
@@ -86,8 +84,8 @@ type
     procedure Gerar;
   end;
 
-var
-  DM: TDM;
+{var
+  DM: TDM;}
 
 implementation
 
@@ -1510,12 +1508,14 @@ begin
     FCaminhoSpedFiscal := Ini.ReadString('Path', 'CaminhoSpedFiscal', '');
 
     Conexao.Disconnect;
-    Conexao.Protocol := Ini.ReadString('ConexaoSQL', 'Protocol', 'ado');
+    Conexao.Protocol := Ini.ReadString('ConexaoSQL', 'Protocol', 'mssql');
     Conexao.HostName := Ini.ReadString('ConexaoSQL', 'HostName', '');
     Conexao.Database := Ini.ReadString('ConexaoSQL', 'Database', '');
     Conexao.User := Ini.ReadString('ConexaoSQL', 'User', '');
     Conexao.Password := Ini.ReadString('ConexaoSQL', 'Password', '');
     Conexao.Port := Ini.ReadInteger('ConexaoSQL', 'Port', 1433);
+    if Conexao.Protocol = 'mssql' then
+       Conexao.LibraryLocation := ExtractFilePath(Application.ExeName) + 'sybdb.dll';
     Conexao.Connect;
   finally
     Ini.Free;
@@ -1532,7 +1532,7 @@ procedure TDM.Gerar;
 begin
   try
     Query.Close;
-    Query.SQL.Text := 'SELECT * FROM SpedsFiscais(NOLOCK) WHERE Situacao = 1';
+    Query.SQL.Text := 'SELECT * FROM SpedsFiscais(NOLOCK) WHERE Situacao IN (1, 4)';
     Query.Open;
 
     while not Query.Eof do
@@ -1551,6 +1551,7 @@ begin
         GerarBlocoK;
         GerarBloco1;
         GerarArquivo;
+        Sleep(3000);
         Atualizar;
 
       except
@@ -1558,6 +1559,7 @@ begin
         begin
           FErro := True;
           FMensagem := 'Erro: ' + Erro.Message + ' -> ' + FUltimoCodigo;
+          GravarLog(FMensagem);
           Atualizar;
         end;
       end;
@@ -1602,6 +1604,38 @@ begin
   begin
     if Components[I] is TZQuery then
       (Components[I] as TZQuery).Close;
+  end;
+end;
+
+procedure TDM.GravarLog(const AMensagem: string);
+var
+  LogDir, LogFile, Linha: string;
+  F: TextFile;
+begin
+  // Pasta onde os logs ficarão
+  LogDir := ExtractFilePath(ParamStr(0)) + 'logs';
+
+  // Criar pasta se não existir
+  if not DirectoryExists(LogDir) then
+    CreateDir(LogDir);
+
+  // Cria o nome do arquivo usando a data do dia
+  LogFile := LogDir + PathDelim + FormatDateTime('yyyy-mm-dd', Date) + '.log';
+
+  // Linha a ser gravada com timestamp
+  Linha := FormatDateTime('hh:nn:ss', Now) + ' - ' + AMensagem;
+
+  // Abrir arquivo em modo append
+  AssignFile(F, LogFile);
+  if FileExists(LogFile) then
+    Append(F)
+  else
+    Rewrite(F);
+
+  try
+    Writeln(F, Linha);
+  finally
+    CloseFile(F);
   end;
 end;
 

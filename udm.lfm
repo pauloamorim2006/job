@@ -7,7 +7,6 @@ object DM: TDM
   object Conexao: TZConnection
     ControlsCodePage = cCP_UTF8
     RawCharacterTransliterateOptions.SQL = True
-    Catalog = 'DB_POWER_SYS'
     Properties.Strings = (
       'RawStringEncoding=DB_CP'
     )
@@ -21,7 +20,7 @@ object DM: TDM
     Left = 57
     Top = 37
   end
-  object Query1: TZQuery
+  object Query: TZQuery
     Connection = Conexao
     ReadOnly = True
     Params = <>
@@ -1232,32 +1231,5 @@ object DM: TDM
     Params = <>
     Left = 244
     Top = 254
-  end
-  object MSSQLConnection1: TMSSQLConnection
-    Connected = False
-    LoginPrompt = False
-    DatabaseName = 'ERPHookedWeb'
-    KeepConnection = False
-    Password = 'root'
-    UserName = 'sa'
-    HostName = 'PAULO\SQLEXPRESS'
-    Left = 441
-    Top = 28
-  end
-  object ZConnection1: TZConnection
-    ControlsCodePage = cCP_UTF8
-    Properties.Strings = (
-      'RawStringEncoding=DB_CP'
-    )
-    DisableSavepoints = False
-    HostName = 'PAULO\SQLEXPRESS'
-    Port = 1433
-    Database = 'ERPHookedWeb'
-    User = 'sa'
-    Password = 'root'
-    Protocol = 'mssql'
-    LibraryLocation = 'C:\publish\sybdb.dll'
-    Left = 465
-    Top = 236
   end
 end

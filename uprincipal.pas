@@ -34,17 +34,20 @@ implementation
 { TfrmPrincipal }
 
 procedure TfrmPrincipal.TimerTimer(Sender: TObject);
+var
+  DM: TDM;
 begin
   Timer.Enabled := False;
   memLog.Clear;
   AddMessage('Início');
+  DM := TDM.Create(nil);
   try
     try
       DM.Conectar(ExtractFilePath(Application.ExeName) + 'Job.ini');
 
       DM.Gerar;
 
-      // DM.Desconectar;
+      DM.Desconectar;
     except
       on Erro: Exception do
       begin
@@ -52,6 +55,7 @@ begin
       end;
     end;
   finally
+    FreeAndNil(DM);
     AddMessage('Fim');
     Timer.Enabled := True;
   end;
